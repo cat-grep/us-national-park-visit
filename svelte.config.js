@@ -14,7 +14,7 @@ const config = {
 		// See https://svelte.dev/docs/kit/adapters for more information about adapters.
 		adapter: adapter(),
 		paths: {
-			base: "/us-national-park-visit",
+			base: process.env.NODE_ENV === 'production' ? "/us-national-park-visit": '',
 		},
 	}
 };
