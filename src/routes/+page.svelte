@@ -21,7 +21,7 @@
 
   // Importing the logo for the sidebar
   import nationalpark from "../data/nationalpark.png";
-  
+
   // Tracks the currently active section in the main content area
   let activeSection = "rank";
 
@@ -43,7 +43,6 @@
       window.removeEventListener("resize", checkViewportWidth);
     };
   });
-
 </script>
 
 <div class="layout">
@@ -56,10 +55,13 @@
           <img
             src={nationalpark}
             alt="National Park Service Logo"
-            class="logo" />
+            class="logo"
+          />
           {#if !folded}
             <!-- Display title only when sidebar is not folded -->
-            <label class="title" for="#">U.S. National Park Visit Data (1979-2023)</label>
+            <label class="title" for="#"
+              >U.S. National Park Visit Data (1979-2023)</label
+            >
           {/if}
         </div>
       </li>
@@ -189,7 +191,6 @@
   </main>
 </div>
 
-
 <style>
   .layout {
     display: flex;
@@ -283,9 +284,9 @@
     height: 20px;
   }
 
-  .sidebar button span {
+  /* .sidebar button span {
     font-size: 0.9rem;
-  }
+  } */
 
   .sidebar.folded button {
     flex-direction: column; /* Change layout to column when folded */
@@ -299,10 +300,10 @@
     margin: 0 0 0.5rem; /* Add spacing below the icon */
   }
 
-  .sidebar.folded button span {
-    font-size: 0.75rem; /* Adjust text size for folded state */
-    display: inline; /* Ensure text is visible in folded state */
-  }
+  /* .sidebar.folded button span {
+    font-size: 0.75rem; 
+    display: inline; 
+  } */
 
   .content {
     flex: 1;
