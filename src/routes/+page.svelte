@@ -1,6 +1,7 @@
 <script>
   // Importing the Calcite Icon component for sidebar icons
   import "@esri/calcite-components/dist/components/calcite-icon";
+  import "@esri/calcite-components/dist/calcite/calcite.css"; // Required for Calcite styles
 
   // Importing Svelte's lifecycle method
   import { onMount } from "svelte";
