@@ -1,4 +1,4 @@
-# Data Viz - U.S. National Park Visit (1979-2023)
+# Interactive Explorer: U.S. National Park Visitation Trends (1979-2023)
 
 Explore U.S. National Park visitation trends from 1979 to 2023 with this web application. Delve into annual and monthly recreation visit data across parks, regions, and states using dynamic charts and maps. Analyze Park rankings over time, compare recreation versus non-recreation visits, and uncover trends in camping and backcountry activities.
 
