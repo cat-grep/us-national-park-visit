@@ -1,13 +1,13 @@
-# U.S. National Park Visit (1979-2023)
+# Data Viz - U.S. National Park Visit (1979-2023)
 
 Explore U.S. National Park visitation trends from 1979 to 2023 with this web application. Delve into annual and monthly recreation visit data across parks, regions, and states using dynamic charts and maps. Analyze Park rankings over time, compare recreation versus non-recreation visits, and uncover trends in camping and backcountry activities.
 
-## [Live Demo✨] (https://cat-grep.github.io/us-national-park-visit/)
+[**Live Demo✨**](https://cat-grep.github.io/us-national-park-visit/)
 
 ## Motivation
 
 ![alt text](image.png)
-* Big Ten Academic Alliance 2025 Data Viz Championship (https://btaa.org/research/love-data-week/compete-in-the-2025-data-viz-championship)
+* [Big Ten Academic Alliance 2025 Data Viz Championship](https://btaa.org/research/love-data-week/compete-in-the-2025-data-viz-championship)
 
 ## Resources
 
