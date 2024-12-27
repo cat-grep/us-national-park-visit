@@ -2,13 +2,13 @@
 
 A data visualization web application designed to present 44 years (1979–2023) of U.S. National Park visitation data. This tool combines interactive visualizations—including charts, maps, and rankings—to provide a comprehensive analysis of trends and patterns.
 
-**<u>Key Features</u>:**
-**National Park Rankings Over Time:** A longitudinal analysis of how visitation rankings among parks have evolved over the decades.
-**Annual Trends in Visits:** Insights into long-term patterns and fluctuations in visitation across all parks.
-**Park, State, and Regional Data:** Tailored visualizations that emphasize geographical differences and trends.
-**Monthly Patterns:** Scatter plots highlighting seasonal visitation dynamics and peak times.
-**Purpose-Based Analysis:** A comparative view of recreation versus non-recreation visits.
-**Camping and Backcountry Activities:** Exploration of trends in overnight stays and wilderness usage.
+**<u>Key Features</u>:**  
+* **National Park Rankings Over Time:** A longitudinal analysis of how visitation rankings among parks have evolved over the decades.  
+* **Annual Trends in Visits:** Insights into long-term patterns and fluctuations in visitation across all parks.  
+* **Park, State, and Regional Data:** Tailored visualizations that emphasize geographical differences and trends.  
+* **Monthly Patterns:** Scatter plots highlighting seasonal visitation dynamics and peak times.  
+* **Purpose-Based Analysis:** A comparative view of recreation versus non-recreation visits.  
+* **Camping and Backcountry Activities:** Exploration of trends in overnight stays and wilderness usage.  
 
 The design prioritizes clarity and interactivity, ensuring all visualizations are accessible and user-friendly. This allows for seamless exploration of complex data, making it intuitive to uncover insights into visitation trends across the decades.
 
