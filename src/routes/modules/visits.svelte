@@ -43,15 +43,15 @@
     return parks
       .map((park) => {
         const parkDataYear = parkData.filter(
-          (d) => d.ParkName === park && d.Year === year
+          (d) => d.ParkName === park && d.Year === year,
         );
         const recreationVisits = parkDataYear.reduce(
           (sum, item) => sum + item.RecreationVisits,
-          0
+          0,
         );
         const nonRecreationVisits = parkDataYear.reduce(
           (sum, item) => sum + item.NonRecreationVisits,
-          0
+          0,
         );
         const totalVisits = recreationVisits + nonRecreationVisits;
         return [park, recreationVisits, nonRecreationVisits, totalVisits];
@@ -71,7 +71,7 @@
         },
         grid: {
           top: 100,
-          bottom: 50,
+          bottom: 100,
           left: 200,
           right: 50,
         },
@@ -80,7 +80,10 @@
           type: "value",
           name: "Visits",
           nameLocation: "center",
-          nameGap: 30,
+          nameGap: 50,
+          axisLabel: {
+            rotate: -20, // Improve readability for long labels
+          },
         },
         yAxis: {
           type: "category",
@@ -226,12 +229,12 @@
   /* Base Styles */
   #chart-container {
     width: 100%;
-    height: 90%;
+    height: 1600px;
   }
 
   #slider-container {
     width: 100%;
-    height: 10%;
+    height: 50px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -249,7 +252,7 @@
   .slider {
     /* -webkit-appearance: none; */
     width: 100%;
-    height: 10px; /* Thinner slider */
+    height: 5px; /* Thinner slider */
     background: #d3d3d3;
     border-radius: 5px;
     outline: none;
@@ -264,8 +267,8 @@
   .slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 16px;
-    height: 16px;
+    width: 10px;
+    height: 10px;
     background: #314656;
     border-radius: 50%;
     cursor: pointer;
@@ -273,8 +276,8 @@
   }
 
   .slider::-moz-range-thumb {
-    width: 16px;
-    height: 16px;
+    width: 10px;
+    height: 10px;
     background: #314656;
     border-radius: 50%;
     cursor: pointer;
@@ -297,7 +300,7 @@
   }
 
   .watermark-label {
-    font-size: 1.5rem; /* Huge font size */
+    font-size: 1.2rem; /* Huge font size */
     font-weight: bold; /* Bold text */
     color: rgba(50, 50, 50, 0.3); /* Light gray with transparency */
     pointer-events: none; /* Allow interactions to pass through */
@@ -308,22 +311,14 @@
 
   /* Responsive Design */
   @media (max-width: 768px) {
-    #chart-container {
-      height: 75%; /* Adjust chart height for smaller screens */
-    }
-
-    .watermark-label {
-      font-size: 2rem; /* Adjust font size for smaller screens */
-    }
-
     .slider {
-      height: 6px; /* Thinner slider */
+      height: 3px; /* Thinner slider */
     }
 
     .slider::-webkit-slider-thumb,
     .slider::-moz-range-thumb {
-      width: 12px; /* Smaller thumb size */
-      height: 12px;
+      width: 6px; /* Smaller thumb size */
+      height: 6px;
     }
 
     datalist option {
@@ -332,26 +327,18 @@
   }
 
   @media (max-width: 480px) {
-    #chart-container {
-      height: 70%; /* Further reduce height for very small screens */
-    }
-
-    .watermark-label {
-      font-size: 1.5rem; /* Smaller font size for very small screens */
-    }
-
     .slider {
-      height: 4px; /* Smaller slider height */
+      height: 1px; /* Smaller slider height */
     }
 
     .slider::-webkit-slider-thumb,
     .slider::-moz-range-thumb {
-      width: 8px; /* Smaller thumb size */
-      height: 8px;
+      width: 3px; /* Smaller thumb size */
+      height: 3px;
     }
 
     datalist option {
-      font-size: 0.5rem; /* Smaller font size for marks */
+      font-size: 0.3rem; /* Smaller font size for marks */
     }
   }
 </style>

@@ -28,9 +28,22 @@
 
   // Define color palette for the lines
   const colors = [
-    "#dd6b66", "#759aa0", "#e69d87", "#8dc1a9", "#ea7e53", "#e43c59",
-    "#73a373", "#73b9bc", "#7289ab", "#91ca8c", "#f49f42", "#d18894",
-    "#c2af85", "#a0a7d4", "#b5c7a3", "#e4af6e",
+    "#dd6b66",
+    "#759aa0",
+    "#e69d87",
+    "#8dc1a9",
+    "#ea7e53",
+    "#e43c59",
+    "#73a373",
+    "#73b9bc",
+    "#7289ab",
+    "#91ca8c",
+    "#f49f42",
+    "#d18894",
+    "#c2af85",
+    "#a0a7d4",
+    "#b5c7a3",
+    "#e4af6e",
   ];
 
   let chartContainer: HTMLDivElement | null = null; // Chart container reference
@@ -80,11 +93,17 @@
         return `<b>${year} ${park}</b><br>Rank: ${rank}`;
       },
     },
+    grid: {
+      top: 50,
+      bottom: 50,
+      left: 50,
+      right: 200,
+    },
     xAxis: {
       type: "category",
       data: years,
       name: "Year",
-      nameGap: 30,
+      nameGap: 40,
       nameLocation: "middle",
       axisLabel: {
         rotate: 45, // Improve readability for long labels
@@ -128,6 +147,6 @@
 <style>
   #chart-container {
     width: 100%; /* Full width of parent container */
-    height: 100%; /* Full height of parent container */
+    height: 1600px; /* Full height of parent container */
   }
 </style>

@@ -34,7 +34,7 @@
 
   // Function to dynamically adjust the sidebar state based on viewport width
   const checkViewportWidth = () => {
-    folded = window.innerWidth < 1920; // Fold the sidebar for small screens
+    folded = window.innerWidth < 768; // Fold the sidebar for small screens
   };
 
   // Add an event listener on component mount to monitor window resize events
@@ -214,14 +214,15 @@
   }
 
   .sidebar.folded {
-    width: 60px;
-    padding: 0.5rem;
+    width: 20px;
+    padding: 0.3rem;
   }
 
   .sidebar .logo {
-    max-width: 100%;
+    max-width: 60%;
     height: auto;
-    margin-bottom: 0.5rem;
+    display: block;
+    margin: 0.5em auto;
   }
 
   .sidebar .title {
@@ -252,7 +253,7 @@
   }
 
   .sidebar li {
-    margin-bottom: 1rem;
+    margin-bottom: 0.7rem;
     cursor: pointer;
     font-size: 1rem;
     color: #dee2e6;
@@ -267,8 +268,8 @@
     align-items: center;
     justify-content: flex-start;
     width: 100%;
-    height: 70px;
-    padding: 0.5rem;
+    height: 60px;
+    padding: 0.2rem;
     background-color: transparent;
     color: #dee2e6;
     border: none;
@@ -284,30 +285,21 @@
 
   .sidebar button calcite-icon {
     margin-right: 1rem;
-    width: 20px;
-    height: 20px;
+    width: 10px;
+    height: 10px;
   }
-
-  /* .sidebar button span {
-    font-size: 0.9rem;
-  } */
 
   .sidebar.folded button {
     flex-direction: column; /* Change layout to column when folded */
     justify-content: center;
     align-items: center;
-    height: 70px; /* Adjust height to fit icon and text vertically */
+    height: 50px; /* Adjust height to fit icon and text vertically */
     text-align: center; /* Center align text */
   }
 
   .sidebar.folded button calcite-icon {
     margin: 0 0 0.5rem; /* Add spacing below the icon */
   }
-
-  /* .sidebar.folded button span {
-    font-size: 0.75rem; 
-    display: inline; 
-  } */
 
   .content {
     flex: 1;
