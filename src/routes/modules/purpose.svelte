@@ -65,7 +65,7 @@
   const option = {
     animationDuration: 5000,
     title: {
-      text: "Recreation vs. Non-Recreation",
+      text: "Recreation vs. Non-Recreation Visits",
       left: "center",
     },
     tooltip: {

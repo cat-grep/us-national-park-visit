@@ -81,7 +81,7 @@
   // ECharts configuration
   const option = {
     title: {
-      text: "National Park Rankings Over Time",
+      text: "National Park Rankings Over Time (Based on Annual Total Visits)",
       left: "center",
     },
     tooltip: {
