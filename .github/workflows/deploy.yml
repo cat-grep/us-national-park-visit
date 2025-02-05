@@ -59,9 +59,9 @@ jobs:
 
     steps:
       - name: Download artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3  # Updated to v3
         with:
-          name: build-artifact  # This must match the name you used during upload
+          name: build-artifact  # This must match the name used during upload
 
       - name: Deploy
         id: deployment
