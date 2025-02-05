@@ -53,21 +53,21 @@ jobs:
 
     environment:
       name: github-pages
-      # This references the 'page_url' output from the deploy-pages action
-      # Note: If you see an error about 'steps.deployment' not existing yet,
-      # you can remove or move this line below.
       url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          # Must match the name used in the "Upload Artifact" step
-          name: build-artifact
+          # Upload entire repository
+          path: '.'
 
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v1
-        with:
-          # Explicitly tell the action which artifact name to deploy
-          artifact_name: build-artifact
+        uses: actions/deploy-pages@v4
