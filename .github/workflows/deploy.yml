@@ -67,4 +67,3 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v1
         with:
-          artifact-name: build-artifact  # This should match the name from the upload step
