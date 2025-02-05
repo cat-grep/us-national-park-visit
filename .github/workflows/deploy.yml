@@ -1,8 +1,8 @@
 name: Deploy to GitHub Pages
 
 on:
-  # Trigger the workflow every time you push to the `main` branch
-  # Using a different branch name? Replace `main` with your branch’s name
+  # Trigger the workflow every time you push to the `master` branch
+  # Using a different branch name? Replace `master` with your branch’s name
   push:
     branches: [master]
 
@@ -40,7 +40,7 @@ jobs:
           cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Setup Pages
         uses: actions/configure-pages@v3
@@ -50,11 +50,12 @@ jobs:
       - name: Build
         run: pnpm run build
 
-      - name: Upload artifact
+      - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          # this should match the `pages` option in your adapter-static options
-          path: 'build/'
+          # Ensure this path matches where your build output is located
+          path: 'build/'  # The build folder, change if different based on your setup
+          name: build-artifact  # Name of the artifact (you can change this if needed)
 
   deploy:
     needs: build
@@ -68,3 +69,5 @@ jobs:
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v1
+        with:
+          artifact-name: build-artifact  # Ensure this matches the artifact name used in the upload step
