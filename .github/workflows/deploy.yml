@@ -1,15 +1,20 @@
 name: Deploy to GitHub Pages
 
 on:
+  # Trigger the workflow every time you push to the `master` branch
   push:
     branches: [master]
+
+  # Allows you to run this workflow manually from the Actions tab on GitHub
   workflow_dispatch:
 
+# Permissions to allow deployments to GitHub Pages
 permissions:
   contents: read
   pages: write
   id-token: write
 
+# Concurrency settings for Pages deployments
 concurrency:
   group: "pages"
   cancel-in-progress: false
@@ -18,8 +23,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+      - name: Checkout source
+        uses: actions/checkout@v4
 
       - name: Install pnpm
         uses: pnpm/action-setup@v2
@@ -29,23 +34,27 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v3
         with:
-          # If Node.js 22 is not yet available, consider using '20' or '18' or 'lts'.
+          # If Node 22 is not stable or not supported yet, switch to Node 20 or 18 (LTS).
           node-version: 22
           cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Informs GitHub Pages that you have a SvelteKit site
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+        with:
+          static_site_generator: sveltekit
+
       - name: Build project
         run: pnpm run build
 
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          # Make sure 'build/' is the correct SvelteKit output directory (e.g. .svelte-kit or build)
+          # This should match the `pages` output in your SvelteKit config (e.g., 'build/')
           path: 'build/'
-          # Name must match what we'll specify in the deploy job
-          name: build-artifact
 
   deploy:
     needs: build
@@ -53,21 +62,10 @@ jobs:
 
     environment:
       name: github-pages
+      # Outputs the final GitHub Pages URL in your workflow summary
       url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
-      # - name: Checkout
-      #   uses: actions/checkout@v4
-
-      # - name: Setup Pages
-      #   uses: actions/configure-pages@v5
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          # Upload entire repository
-          path: '.'
-
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
