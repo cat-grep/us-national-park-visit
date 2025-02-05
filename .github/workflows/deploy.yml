@@ -50,7 +50,7 @@ jobs:
       - name: Build
         run: pnpm run build
 
-      - name: Upload Artifacts
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           # this should match the `pages` option in your adapter-static options
