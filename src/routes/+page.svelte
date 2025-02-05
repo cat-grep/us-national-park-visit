@@ -63,7 +63,8 @@
           />
           {#if !folded}
             <!-- Display title only when sidebar is not folded -->
-            <label class="title" for="#">National Park Rankings Over Time (Based on Total Visits)</label>
+            <label class="title" for="#">U.S. National Park Visit Data (1979-2023)</label
+            >
           {/if}
         </div>
       </li>
@@ -73,7 +74,7 @@
         <button on:click={() => (activeSection = "rank")}>
           <calcite-icon icon="list-number"></calcite-icon>
           {#if !folded}
-            National Park Rankings Over Time
+            National Park Rankings Over Time (Based on Total Visits)
           {:else}
             Rank
           {/if}
