@@ -66,5 +66,3 @@ jobs:
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v1
-        with:  # This section no longer has an 'artifact-name' input
-          # Leave this block empty unless there are specific options you need to configure.
