@@ -29,6 +29,7 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v3
         with:
+          # If Node.js 22 is not yet available, consider using '20' or '18' or 'lts'.
           node-version: 22
           cache: pnpm
 
@@ -38,10 +39,12 @@ jobs:
       - name: Build project
         run: pnpm run build
 
-      - name: Upload Artifacts
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          path: 'build/'  # Ensure this matches your SvelteKit output directory
+          # Make sure 'build/' is the correct SvelteKit output directory (e.g. .svelte-kit or build)
+          path: 'build/'
+          # Name must match what we'll specify in the deploy job
           name: build-artifact
 
   deploy:
@@ -50,16 +53,21 @@ jobs:
 
     environment:
       name: github-pages
+      # This references the 'page_url' output from the deploy-pages action
+      # Note: If you see an error about 'steps.deployment' not existing yet,
+      # you can remove or move this line below.
       url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: build-artifact  # Must match the name used in the upload step
+          # Must match the name used in the "Upload Artifact" step
+          name: build-artifact
 
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v1
         with:
-          artifact_name: build-artifact  # Must match the name used in the upload step
+          # Explicitly tell the action which artifact name to deploy
+          artifact_name: build-artifact
