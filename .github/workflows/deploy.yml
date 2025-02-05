@@ -35,18 +35,13 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v3
-        with:
-          static_site_generator: sveltekit
-
-      - name: Build
+      - name: Build project
         run: pnpm run build
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          path: 'build/'
+          path: 'build/'  # Ensure this matches your SvelteKit output directory
           name: build-artifact
 
   deploy:
@@ -59,10 +54,10 @@ jobs:
 
     steps:
       - name: Download artifact
-        uses: actions/download-artifact@v4  # Updated to v4
+        uses: actions/download-artifact@v4
         with:
-          name: build-artifact  # This must match the name used during upload
+          name: build-artifact  # Must match the name used in the upload step
 
-      - name: Deploy
+      - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v1
