@@ -1,30 +1,13 @@
 <script lang="ts">
-  // Import ECharts modules
-  import * as echarts from "echarts/core";
-  import {
-    TooltipComponent,
-    TitleComponent,
-    GridComponent,
-    VisualMapComponent,
-  } from "echarts/components";
-  import { HeatmapChart } from "echarts/charts";
-  import { CanvasRenderer } from "echarts/renderers";
+  // Heatmap: NPS region × year, colored by recreation visits.
+  // Clicking a cell sets the shared year and region filter.
+  import { echart } from "$lib/echarts";
+  import ViewHeader from "$lib/components/ViewHeader.svelte";
+  import DataTable from "$lib/components/DataTable.svelte";
+  import { app, setView } from "$lib/state.svelte";
+  import { tokens, baseOption, categoryAxis, seqSteps, fmtFull, fmtShort } from "$lib/theme";
+  import { groupByYear, type Dataset } from "$lib/data";
 
-  // Register ECharts components
-  echarts.use([
-    TooltipComponent,
-    TitleComponent,
-    GridComponent,
-    VisualMapComponent,
-    HeatmapChart,
-    CanvasRenderer,
-  ]);
-
-  // Import data and Svelte lifecycle hooks
-  import parkData from "../../data/US-National-Parks_Use_1979-2023_By-Month_Location_Date.json";
-  import { onMount, onDestroy } from "svelte";
-
-  // Import region-specific images
   import alaska from "../../data/alaska.jpg";
   import intermountain from "../../data/intermountain.jpg";
   import midwest from "../../data/midwest.jpg";
@@ -32,148 +15,113 @@
   import pacificwest from "../../data/pacificwest.jpg";
   import southeast from "../../data/southeast.jpg";
 
-  // Map regions to images
-  const imgSets: Record<string, string> = {
+  let { data }: { data: Dataset } = $props();
+
+  const regionMaps: Record<string, string> = {
     Alaska: alaska,
-    "Intermountain ": intermountain,
-    "Midwest ": midwest,
-    "Northeast ": northeast,
-    "Pacific West ": pacificwest,
-    "Southeast ": southeast,
+    Intermountain: intermountain,
+    Midwest: midwest,
+    Northeast: northeast,
+    "Pacific West": pacificwest,
+    Southeast: southeast,
   };
 
-  let chartContainer: HTMLDivElement | null = null;
-  let chart: echarts.ECharts | null = null;
+  const t = $derived(tokens(app.dark));
+  const years = data.years.map(String);
+  const regions = data.regions;
+  const byRegion = groupByYear(data, "region");
+  const cells = regions.flatMap((reg, ri) =>
+    byRegion.get(reg)!.map((g) => [data.years.indexOf(g.year), ri, g.rec, g.parks] as const),
+  );
+  const maxVal = Math.max(...cells.map((c) => c[2]));
 
-  // Extract unique years and regions from data
-  const years = [...new Set(parkData.map((d) => d.Year))].sort((a, b) => a - b);
-  const regions = [...new Set(parkData.map((d) => d.Region))];
-
-  // Aggregate data for heatmap
-  const aggregatedData = parkData.reduce((acc, item) => {
-    const yearIndex = years.indexOf(item.Year);
-    const regionIndex = regions.indexOf(item.Region);
-    const visits = item.RecreationVisits;
-
-    if (!acc[regionIndex]) acc[regionIndex] = [];
-    if (!acc[regionIndex][yearIndex]) acc[regionIndex][yearIndex] = 0;
-
-    acc[regionIndex][yearIndex] += visits;
-    return acc;
-  }, []);
-
-  // Prepare heatmap data in the format [YearIndex, RegionIndex, Visits]
-  const heatmapData = [];
-  aggregatedData.forEach((regionData, regionIndex) => {
-    if (regionData) {
-      regionData.forEach((visits, yearIndex) => {
-        if (visits) {
-          heatmapData.push([yearIndex, regionIndex, visits]);
-        }
-      });
-    }
-  });
-
-  // ECharts Configuration
-  const option = {
+  const option = $derived({
+    ...baseOption(t),
+    grid: { left: 8, right: 16, top: 8, bottom: 64, containLabel: true },
     tooltip: {
-      position: (point, params, dom, rect, size) => {
-        const screenHeight = window.innerHeight;
-        const mouseY = point[1];
-
-        return mouseY > screenHeight / 2
-          ? { top: point[1] - size.contentSize[1] - 10, left: point[0] - size.contentSize[0] / 2 }
-          : { top: point[1] + 10, left: point[0] - size.contentSize[0] / 2 };
-      },
-      formatter: (params) => {
-        const year = years[params.data[0]];
-        const region = regions[params.data[1]];
-        const visits = new Intl.NumberFormat("en-US").format(params.data[2]);
-        const imgLink = imgSets[region];
-        return `
-          <div style="text-align: center;">
-            <b>${region} (${year})</b><br>
-            Recreation Visits: ${visits}<br>
-            <img src="${imgLink}" alt="${region}" style="width: 300px; height: auto; margin-top: 5px;" />
-          </div>`;
+      ...baseOption(t).tooltip,
+      formatter: (p: { data: readonly number[] }) => {
+        const [xi, ri, v, n] = p.data;
+        const reg = regions[ri];
+        return `<b>${reg} · ${years[xi]}</b><br/>${fmtFull(v)} recreation visits<br/>${n} parks
+          <br/><img src="${regionMaps[reg]}" alt="" style="width:160px;margin-top:6px;border-radius:4px" />`;
       },
     },
-    title: {
-      text: "Annual Recreation Visits to National Parks by Region",
-      left: "center",
-    },
-    xAxis: {
-      type: "category",
-      data: years,
-      name: "Year",
-      nameLocation: "middle",
-      nameGap: 50,
-      axisLabel: {
-        rotate: 45,
-      },
-    },
-    yAxis: {
-      type: "category",
-      data: regions,
-      name: "Region",
-      nameLocation: "middle",
-      nameGap: 100,
-    },
+    xAxis: categoryAxis(t, years, { splitArea: { show: false }, axisLabel: { color: t.muted, interval: 4 } }),
+    yAxis: categoryAxis(t, regions, { inverse: true, axisLabel: { color: t.ink2 } }),
     visualMap: {
       min: 0,
-      max: Math.max(...heatmapData.map((d) => d[2])),
+      max: maxVal,
+      dimension: 2, // visits (the default, last dimension, is the park count)
       calculable: true,
-      orient: "vertical",
-      left: "right",
-      top: "middle",
-      itemHeight: 600,
+      orient: "horizontal",
+      left: "center",
+      bottom: 0,
+      itemHeight: 240,
+      itemWidth: 12,
+      textStyle: { color: t.muted },
+      inRange: { color: seqSteps(t) },
+      formatter: (v: number) => fmtShort(v),
     },
     series: [
       {
         type: "heatmap",
-        data: heatmapData,
-        itemStyle: {
-          borderColor: "#e0e6eb",
-          borderWidth: 0.5,
-        },
-        emphasis: {
-          itemStyle: {
-            shadowBlur: 10,
-            shadowColor: "rgba(0, 0, 0, 0.5)",
-          },
-        },
+        data: cells,
+        itemStyle: { borderColor: t.surface, borderWidth: 1 },
+        emphasis: { itemStyle: { borderColor: t.ink, borderWidth: 1.5 } },
       },
     ],
-  };
-
-  // Initialize chart
-  const initializeChart = () => {
-    if (chartContainer) {
-      chart = echarts.init(chartContainer);
-      chart.setOption(option);
-    }
-  };
-
-  // Mount lifecycle hook
-  onMount(() => {
-    initializeChart();
-    window.addEventListener("resize", () => chart?.resize());
   });
 
-  // Cleanup lifecycle hook
-  onDestroy(() => {
-    if (chart) {
-      chart.dispose();
-    }
+  function onInit(chart: import("echarts/core").ECharts) {
+    chart.on("click", (p) => {
+      const [xi, ri] = (p as { data: number[] }).data;
+      app.year = data.years[xi];
+      app.region = regions[ri];
+    });
+  }
+
+  // Table: one row per year, one column per region.
+  const tableRows = data.years.map((y) => {
+    const row: Record<string, number> = { year: y };
+    for (const reg of regions) row[reg] = byRegion.get(reg)!.find((g) => g.year === y)?.rec ?? 0;
+    return row;
   });
 </script>
 
-<!-- Chart Container -->
-<div id="chart-container" bind:this={chartContainer}></div>
+<ViewHeader>
+  {#snippet controls()}
+    {#if app.region}
+      <span class="field">Selected: <b>{app.region}, {app.year}</b></span>
+      <button onclick={() => setView("park")}>Show these parks on the map</button>
+      <button class="ghost" onclick={() => (app.region = null)}>Clear</button>
+    {:else}
+      <span class="field">Click a cell to select a region and year.</span>
+    {/if}
+  {/snippet}
+</ViewHeader>
+
+{#if app.showTable}
+  <DataTable
+    caption="Recreation visits by NPS region and year"
+    rows={tableRows}
+    columns={[
+      { key: "year", label: "Year" },
+      ...regions.map((r) => ({ key: r, label: r, numeric: true, format: (v: unknown) => fmtFull(v as number) })),
+    ]}
+  />
+{:else}
+  <div class="chart heat" use:echart={{ option, onInit }} role="img" aria-label="Heatmap of recreation visits by NPS region and year. Use the table view for exact values."></div>
+{/if}
 
 <style>
-  #chart-container {
-    width: 100%; /* Full width */
-    height: 100%; /* Full height */
+  .heat {
+    height: 460px;
+  }
+
+  .ghost {
+    background: transparent;
+    color: var(--fg-2);
+    border: 1px solid var(--border-color);
   }
 </style>

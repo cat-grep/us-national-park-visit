@@ -14,6 +14,17 @@ The design prioritizes clarity and interactivity, ensuring all visualizations ar
 
 [**Live Demo✨**](https://cat-grep.github.io/us-national-park-visit/)
 
+## Development
+
+```sh
+pnpm install
+pnpm dev      # pre-aggregates the data, then starts the dev server
+pnpm build    # static site in build/
+pnpm check    # type check
+```
+
+`scripts/build-data.mjs` turns the raw monthly dataset in `src/data/` into small JSON files in `static/data/` (generated, not committed), so the raw 13 MB file is never bundled.
+
 ## Motivation
 
 ![alt text](image.png)
@@ -25,8 +36,8 @@ The design prioritizes clarity and interactivity, ensuring all visualizations ar
 
 * [Svelte](https://svelte.dev/)
 * [Apache ECharts](https://echarts.apache.org/index.html)
-* [esri Calcite](https://developers.arcgis.com/calcite-design-system/)
-* [esri Map Component](https://developers.arcgis.com/javascript/latest/references/map-components/)
+* [D3](https://d3js.org/) (maps and detail charts)
+* [us-atlas](https://github.com/topojson/us-atlas) (state boundaries, from the U.S. Census Bureau)
 
 ### Datasets
 
@@ -40,7 +51,6 @@ The design prioritizes clarity and interactivity, ensuring all visualizations ar
 
 ### Icons and Images
 
-* [Calcite Design System Icons](https://developers.arcgis.com/calcite-design-system/icons/)
 * [National Park Region](https://www.nps.gov/subjects/nationalhistoriclandmarks/contactus.htm)
 * [Flaticon-RV](https://www.flaticon.com/free-icon/rv_7058351?term=rv+camp&page=1&position=7&origin=search&related_id=7058351)
 * [Flaticon-Deer](https://www.flaticon.com/free-icon/deer_1063448?term=wild&related_id=1063448)

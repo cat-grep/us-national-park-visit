@@ -1,344 +1,113 @@
 <script lang="ts">
-  // Import ECharts core and required components
-  import * as echarts from "echarts/core";
-  import {
-    GridComponent,
-    TitleComponent,
-    TooltipComponent,
-    DatasetComponent,
-  } from "echarts/components";
-  import { BarChart } from "echarts/charts";
-  import { CanvasRenderer } from "echarts/renderers";
+  // Stacked horizontal bars: recreation + non-recreation visits per park for
+  // the selected year, sorted by total. Linked to the global year and park.
+  import { echart } from "$lib/echarts";
+  import ViewHeader from "$lib/components/ViewHeader.svelte";
+  import YearSlider from "$lib/components/YearSlider.svelte";
+  import DataTable from "$lib/components/DataTable.svelte";
+  import { app } from "$lib/state.svelte";
+  import { tokens, baseOption, valueAxis, legend, fmtFull } from "$lib/theme";
+  import type { Dataset } from "$lib/data";
 
-  // Register ECharts components
-  echarts.use([
-    GridComponent,
-    TitleComponent,
-    TooltipComponent,
-    DatasetComponent,
-    BarChart,
-    CanvasRenderer,
-  ]);
+  let { data }: { data: Dataset } = $props();
 
-  // Import Svelte lifecycle hooks
-  import { onMount, onDestroy } from "svelte";
+  const t = $derived(tokens(app.dark));
+  // Already sorted by rank (= total visits) for each year.
+  const rows = $derived((data.byYear.get(app.year) ?? []).filter((r) => r.rec + r.non > 0));
+  const names = $derived(rows.map((r) => data.parkByCode.get(r.code)!.name));
+  const selectedName = $derived(app.park ? data.parkByCode.get(app.park)?.name : undefined);
 
-  // References for chart container and ECharts instance
-  let chartContainer: HTMLDivElement | null = null;
-  let chart: echarts.ECharts | null = null;
+  const option = $derived({
+    ...baseOption(t),
+    animationDurationUpdate: 500,
+    legend: legend(t, { data: ["Recreation visits", "Non-recreation visits"] }),
+    grid: { left: 8, right: 24, top: 36, bottom: 8, containLabel: true },
+    tooltip: {
+      ...baseOption(t).tooltip,
+      trigger: "axis",
+      axisPointer: { type: "shadow" },
+      formatter: (ps: { dataIndex: number }[]) => {
+        const r = rows[ps[0].dataIndex];
+        return `<b>${names[ps[0].dataIndex]}</b> · rank #${r.rank}<br/>
+          Recreation: ${fmtFull(r.rec)}<br/>Non-recreation: ${fmtFull(r.non)}<br/>
+          <b>Total: ${fmtFull(r.rec + r.non)}</b>`;
+      },
+    },
+    xAxis: valueAxis(t, { position: "top" }),
+    yAxis: {
+      type: "category",
+      inverse: true,
+      data: names,
+      axisTick: { show: false },
+      axisLine: { lineStyle: { color: t.axis } },
+      axisLabel: {
+        color: t.ink2,
+        formatter: (v: string) => (v === selectedName ? `{sel|${v}}` : v),
+        rich: { sel: { color: t.ink, fontWeight: "bold", backgroundColor: t.grid, padding: [2, 4], borderRadius: 3 } },
+      },
+    },
+    series: [
+      {
+        name: "Recreation visits",
+        type: "bar",
+        stack: "total",
+        barWidth: "70%",
+        data: rows.map((r) => r.rec),
+        itemStyle: { color: t.series[0], borderColor: t.surface, borderWidth: 1 },
+      },
+      {
+        name: "Non-recreation visits",
+        type: "bar",
+        stack: "total",
+        data: rows.map((r) => r.non),
+        itemStyle: { color: t.series[1], borderColor: t.surface, borderWidth: 1, borderRadius: [0, 4, 4, 0] },
+      },
+    ],
+  });
 
-  // Variables for slider and autoplay
-  let selectedYear: number = 1979;
-  let years: number[] = [];
-  let autoPlayInterval: number | undefined;
-
-  // Load and process JSON data
-  import parkData from "../../data/US-National-Parks_Use_1979-2023_By-Month_Location_Date.json";
-
-  const parks = [...new Set(parkData.map((d) => d.ParkName))];
-  years = [...new Set(parkData.map((d) => d.Year))].sort((a, b) => a - b);
-
-  // Function to extract and aggregate data for a specific year
-  function getYearData(year: number) {
-    return parks
-      .map((park) => {
-        const parkDataYear = parkData.filter(
-          (d) => d.ParkName === park && d.Year === year,
-        );
-        const recreationVisits = parkDataYear.reduce(
-          (sum, item) => sum + item.RecreationVisits,
-          0,
-        );
-        const nonRecreationVisits = parkDataYear.reduce(
-          (sum, item) => sum + item.NonRecreationVisits,
-          0,
-        );
-        const totalVisits = recreationVisits + nonRecreationVisits;
-        return [park, recreationVisits, nonRecreationVisits, totalVisits];
-      })
-      .sort((a, b) => b[3] - a[3]); // Sort by total visits
+  function onInit(chart: import("echarts/core").ECharts) {
+    chart.on("click", (p) => {
+      const r = rows[(p as { dataIndex: number }).dataIndex];
+      if (r) app.park = app.park === r.code ? null : r.code;
+    });
   }
 
-  // Initialize ECharts instance and configure chart options
-  const initializeChart = () => {
-    if (chartContainer) {
-      chart = echarts.init(chartContainer);
-
-      const option = {
-        title: {
-          text: "Annual Trends in Visits Across National Parks",
-          left: "center",
-        },
-        grid: {
-          top: 100,
-          bottom: 100,
-          left: 200,
-          right: 50,
-        },
-        xAxis: {
-          max: "dataMax",
-          type: "value",
-          name: "Visits",
-          nameLocation: "center",
-          nameGap: 50,
-          axisLabel: {
-            rotate: -20, // Improve readability for long labels
-          },
-        },
-        yAxis: {
-          type: "category",
-          name: "National Park Name",
-          inverse: true,
-          data: parks,
-          nameLocation: "center",
-          nameGap: 150,
-        },
-        tooltip: {
-          trigger: "axis",
-          axisPointer: {
-            type: "shadow",
-          },
-          formatter: (params: any) => {
-            return `<strong>${params[0].axisValueLabel}</strong><br/>
-              Recreation Visits: ${params[0].value[1].toLocaleString()}<br/>
-              Non-Recreation Visits: ${params[0].value[2].toLocaleString()}<br/>
-              <strong>Total Visits: ${params[0].value[3].toLocaleString()}</strong>`;
-          },
-        },
-        dataset: {
-          source: getYearData(selectedYear),
-        },
-        legend: {
-          data: ["Recreation Visits", "Non-Recreation Visits"],
-          top: "30px",
-        },
-        series: [
-          {
-            name: "Recreation Visits",
-            type: "bar",
-            stack: "Total",
-            encode: {
-              x: 1,
-              y: 0,
-            },
-            itemStyle: {
-              color: "#d7ab82",
-            },
-          },
-          {
-            name: "Non-Recreation Visits",
-            type: "bar",
-            stack: "Total",
-            encode: {
-              x: 2,
-              y: 0,
-            },
-            itemStyle: {
-              color: "#919e8b",
-            },
-          },
-        ],
-      };
-
-      chart.setOption(option);
-    }
-  };
-
-  // Update chart data based on the selected year
-  const updateChart = (year: number) => {
-    const newSource = getYearData(year);
-    chart?.setOption({
-      dataset: {
-        source: newSource,
-      },
-      yAxis: {
-        data: newSource.map((d) => d[0]),
-      },
-    });
-  };
-
-  // Handle slider input changes
-  const handleSliderChange = (event: Event) => {
-    if (autoPlayInterval) {
-      clearInterval(autoPlayInterval); // Stop autoplay when user interacts
-    }
-    const year = parseInt((event.target as HTMLInputElement).value, 10);
-    selectedYear = year;
-    updateChart(year);
-  };
-
-  // Automatically play through the years
-  const autoPlaySlider = () => {
-    let yearIndex = years.indexOf(selectedYear);
-
-    autoPlayInterval = setInterval(() => {
-      yearIndex++;
-      if (yearIndex >= years.length) {
-        clearInterval(autoPlayInterval);
-        return;
-      }
-      selectedYear = years[yearIndex];
-      updateChart(selectedYear);
-    }, 1000); // 1-second interval
-  };
-
-  // Mount and clean up lifecycle hooks
-  onMount(() => {
-    initializeChart();
-    autoPlaySlider(); // Start autoplay
-    window.addEventListener("resize", () => chart?.resize());
-  });
-
-  onDestroy(() => {
-    if (chart) {
-      chart.dispose();
-    }
-    if (autoPlayInterval) {
-      clearInterval(autoPlayInterval);
-    }
-  });
+  const tableRows = $derived(
+    rows.map((r, i) => ({ rank: r.rank, name: names[i], rec: r.rec, non: r.non, total: r.rec + r.non })),
+  );
 </script>
 
-<!-- Slider for year selection -->
-<div id="slider-container">
-  <label for="year-slider" class="watermark-label">
-    Year: {selectedYear}
-  </label>
-  <input
-    class="slider"
-    id="year-slider"
-    type="range"
-    min={Math.min(...years)}
-    max={Math.max(...years)}
-    value={selectedYear}
-    step="1"
-    list="year-marks"
-    on:input={handleSliderChange}
-  />
-  <datalist id="year-marks">
-    {#each years as year}
-      <option value={year}></option>
-    {/each}
-  </datalist>
-</div>
+<ViewHeader>
+  {#snippet controls()}
+    <div class="slider"><YearSlider /></div>
+  {/snippet}
+</ViewHeader>
 
-<!-- Chart container -->
-<div id="chart-container" bind:this={chartContainer}></div>
+{#if app.showTable}
+  <DataTable
+    caption={`Visits by park, ${app.year}`}
+    rows={tableRows}
+    columns={[
+      { key: "rank", label: "Rank", numeric: true },
+      { key: "name", label: "Park" },
+      { key: "rec", label: "Recreation", numeric: true, format: (v) => fmtFull(v as number) },
+      { key: "non", label: "Non-recreation", numeric: true, format: (v) => fmtFull(v as number) },
+      { key: "total", label: "Total", numeric: true, format: (v) => fmtFull(v as number) },
+    ]}
+  />
+{:else}
+  <div
+    class="chart"
+    style:height="{rows.length * 20 + 70}px"
+    use:echart={{ option, onInit }}
+    role="img"
+    aria-label={`Bar chart of visits per park in ${app.year}. Use the table view for exact values.`}
+  ></div>
+{/if}
 
 <style>
-  /* Base Styles */
-  #chart-container {
-    width: 100%;
-    height: 1600px;
-  }
-
-  #slider-container {
-    width: 100%;
-    height: 50px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    position: relative; /* For positioning marks */
-  }
-
-  input[type="range"] {
-    width: 95%;
-    /* -webkit-appearance: none; */
-    /* background: transparent; */
-    position: relative;
-  }
-
   .slider {
-    /* -webkit-appearance: none; */
-    width: 100%;
-    height: 5px; /* Thinner slider */
-    background: #d3d3d3;
-    border-radius: 5px;
-    outline: none;
-    opacity: 0.8;
-    transition: opacity 0.2s;
-  }
-
-  .slider:hover {
-    opacity: 1;
-  }
-
-  .slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 10px;
-    height: 10px;
-    background: #314656;
-    border-radius: 50%;
-    cursor: pointer;
-    box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
-  }
-
-  .slider::-moz-range-thumb {
-    width: 10px;
-    height: 10px;
-    background: #314656;
-    border-radius: 50%;
-    cursor: pointer;
-    box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
-  }
-
-  datalist {
-    display: flex;
-    justify-content: space-between;
-    width: 95%;
-    margin-top: 10px;
-  }
-
-  datalist option {
-    position: relative;
-    text-align: center;
-    font-size: 1rem; /* Smaller font size for marks */
-    color: #666;
-    flex: 1; /* Spread evenly */
-  }
-
-  .watermark-label {
-    font-size: 1.2rem; /* Huge font size */
-    font-weight: bold; /* Bold text */
-    color: rgba(50, 50, 50, 0.3); /* Light gray with transparency */
-    pointer-events: none; /* Allow interactions to pass through */
-    user-select: none; /* Disable text selection */
-    text-align: center;
-    margin-bottom: 0.5rem; /* Add space between label and slider */
-  }
-
-  /* Responsive Design */
-  @media (max-width: 768px) {
-    .slider {
-      height: 3px; /* Thinner slider */
-    }
-
-    .slider::-webkit-slider-thumb,
-    .slider::-moz-range-thumb {
-      width: 6px; /* Smaller thumb size */
-      height: 6px;
-    }
-
-    datalist option {
-      font-size: 0.6rem; /* Smaller font size for marks */
-    }
-  }
-
-  @media (max-width: 480px) {
-    .slider {
-      height: 1px; /* Smaller slider height */
-    }
-
-    .slider::-webkit-slider-thumb,
-    .slider::-moz-range-thumb {
-      width: 3px; /* Smaller thumb size */
-      height: 3px;
-    }
-
-    datalist option {
-      font-size: 0.3rem; /* Smaller font size for marks */
-    }
+    flex: 1 1 360px;
+    max-width: 640px;
   }
 </style>

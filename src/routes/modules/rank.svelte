@@ -1,152 +1,138 @@
 <script lang="ts">
-  // Import ECharts modules
-  import * as echarts from "echarts/core";
-  import { LineChart } from "echarts/charts";
-  import {
-    TitleComponent,
-    TooltipComponent,
-    GridComponent,
-    LegendComponent,
-  } from "echarts/components";
-  import { CanvasRenderer } from "echarts/renderers";
+  // Bump chart of yearly rank. All parks are drawn as gray context lines;
+  // the selected park is highlighted (color follows the selection, never the
+  // rank), and the current top 10 are labelled at the line ends.
+  import { echart } from "$lib/echarts";
+  import ViewHeader from "$lib/components/ViewHeader.svelte";
+  import YearSlider from "$lib/components/YearSlider.svelte";
+  import DataTable from "$lib/components/DataTable.svelte";
+  import { app } from "$lib/state.svelte";
+  import { tokens, baseOption, categoryAxis, fmtFull } from "$lib/theme";
+  import { eventMarkLine } from "$lib/events";
+  import type { Dataset } from "$lib/data";
 
-  // Register ECharts components
-  echarts.use([
-    TitleComponent,
-    TooltipComponent,
-    GridComponent,
-    LegendComponent,
-    LineChart,
-    CanvasRenderer,
-  ]);
+  let { data }: { data: Dataset } = $props();
 
-  // Import Svelte lifecycle hooks
-  import { onMount, onDestroy } from "svelte";
+  const t = $derived(tokens(app.dark));
+  const years = data.years.map(String);
+  const lastYear = data.years.at(-1)!;
+  const lastRank = new Map(data.byYear.get(lastYear)!.map((r) => [r.code, r.rank]));
+  const parksByName = [...data.parks].sort((a, b) => a.name.localeCompare(b.name));
 
-  // Import dataset
-  import data from "../../data/US-National-Parks_Use_1979-2023_ByYearByPark_ranked.json";
+  const option = $derived.by(() => {
+    const series = data.parks.map((p) => {
+      const rows = new Map(data.byPark.get(p.code)!.map((r) => [r.year, r]));
+      const selected = app.park === p.code;
+      const labelled = selected || (lastRank.get(p.code) ?? 99) <= 10;
+      const emphasised = labelled && !selected && app.park === null;
+      return {
+        id: p.code,
+        name: p.name,
+        type: "line",
+        data: data.years.map((y) => rows.get(y)?.rank ?? null),
+        showSymbol: selected,
+        symbolSize: 6,
+        z: selected ? 10 : 2,
+        // With nothing selected, the labelled top 10 are a darker gray so labels connect to them.
+        lineStyle: {
+          width: selected ? 3 : emphasised ? 1.5 : 1,
+          color: selected ? t.series[1] : emphasised ? t.muted : t.context,
+        },
+        itemStyle: { color: selected ? t.series[1] : t.context },
+        emphasis: { focus: "series", lineStyle: { width: 2.5, color: selected ? t.series[1] : t.ink2 } },
+        blur: { lineStyle: { opacity: 0.4 } },
+        endLabel: {
+          show: labelled,
+          formatter: "{a}",
+          color: selected ? t.ink : t.ink2,
+          fontWeight: selected ? "bold" : "normal",
+        },
+        labelLayout: { moveOverlap: "shiftY" },
+        ...(p.code === data.parks[0].code
+          ? { markLine: { ...eventMarkLine(t.muted, t.ink2), label: { ...eventMarkLine(t.muted, t.ink2).label, position: "end" } } }
+          : {}),
+      };
+    });
 
-  // Define color palette for the lines
-  const colors = [
-    "#dd6b66",
-    "#759aa0",
-    "#e69d87",
-    "#8dc1a9",
-    "#ea7e53",
-    "#e43c59",
-    "#73a373",
-    "#73b9bc",
-    "#7289ab",
-    "#91ca8c",
-    "#f49f42",
-    "#d18894",
-    "#c2af85",
-    "#a0a7d4",
-    "#b5c7a3",
-    "#e4af6e",
-  ];
-
-  let chartContainer: HTMLDivElement | null = null; // Chart container reference
-  let chart: echarts.ECharts | null = null; // ECharts instance
-
-  // Extract unique parks and years from the data
-  const parks = [...new Set(data.map((d) => d.ParkName))];
-  const years = [...new Set(data.map((d) => d.Year))].sort((a, b) => a - b);
-
-  // Generate series data for each park
-  const series = parks.map((park, index) => {
     return {
-      name: park,
-      type: "line",
-      data: years.map((year) => {
-        const record = data.find((d) => d.ParkName === park && d.Year === year);
-        return record ? record.Rank : null; // Handle missing ranks
-      }),
-      emphasis: {
-        focus: "series",
+      ...baseOption(t),
+      animation: false, // 63 series: keep selection changes snappy
+      grid: { left: 8, right: 190, top: 24, bottom: 8, containLabel: true },
+      tooltip: {
+        ...baseOption(t).tooltip,
+        trigger: "item",
+        formatter: (p: { seriesName: string; name: string; value: number }) =>
+          `<b>${p.seriesName}</b><br/>${p.name}: rank #${p.value}`,
       },
-      lineStyle: {
-        color: colors[index % colors.length], // Assign colors cyclically
+      xAxis: categoryAxis(t, years, { boundaryGap: false, position: "top" }),
+      yAxis: {
+        type: "value",
+        inverse: true,
+        min: 1,
+        max: data.parks.length,
+        interval: 5,
+        axisLabel: { color: t.muted, formatter: (v: number) => (v === 1 ? "#1" : String(v)) },
+        splitLine: { lineStyle: { color: t.grid } },
       },
-      itemStyle: {
-        color: colors[index % colors.length], // Match point color with line
-      },
-      endLabel: {
-        show: true,
-        formatter: (params: any) => `${params.seriesName}`, // Display park name
-      },
+      series,
     };
   });
 
-  // ECharts configuration
-  const option = {
-    title: {
-      text: "National Park Rankings Over Time (Based on Annual Total Visits)",
-      left: "center",
-    },
-    tooltip: {
-      position: "top",
-      formatter: (params: any) => {
-        const year = years[params.dataIndex];
-        const park = params.seriesName;
-        const rank = params.data !== null ? params.data : "N/A"; // Handle missing ranks
-        return `<b>${year} ${park}</b><br>Rank: ${rank}`;
-      },
-    },
-    grid: {
-      top: 50,
-      bottom: 50,
-      left: 50,
-      right: 200,
-    },
-    xAxis: {
-      type: "category",
-      data: years,
-      name: "Year",
-      nameGap: 40,
-      nameLocation: "middle",
-      axisLabel: {
-        rotate: 45, // Improve readability for long labels
-      },
-    },
-    yAxis: {
-      type: "value",
-      inverse: true, // Invert to place rank 1 at the top
-      name: "Rank",
-      min: 1,
-      nameGap: 30,
-      nameLocation: "middle",
-    },
-    series: series,
-  };
+  function onInit(chart: import("echarts/core").ECharts) {
+    chart.on("click", (p) => {
+      const id = (p as { seriesId?: string }).seriesId;
+      if (id) app.park = app.park === id ? null : id;
+    });
+  }
 
-  // Initialize and render the chart
-  const initializeChart = () => {
-    if (chartContainer) {
-      chart = echarts.init(chartContainer);
-      chart.setOption(option);
-    }
-  };
-
-  // Mount and cleanup lifecycle hooks
-  onMount(() => {
-    initializeChart();
-    window.addEventListener("resize", () => chart?.resize()); // Handle responsiveness
-  });
-
-  onDestroy(() => {
-    if (chart) {
-      chart.dispose(); // Dispose chart instance on destroy
-    }
-  });
+  const tableRows = $derived(
+    (data.byYear.get(app.year) ?? []).map((r) => ({
+      rank: r.rank,
+      name: data.parkByCode.get(r.code)!.name,
+      total: r.rec + r.non,
+    })),
+  );
 </script>
 
-<!-- Chart Container -->
-<div id="chart-container" bind:this={chartContainer}></div>
+<ViewHeader>
+  {#snippet controls()}
+    <label class="field">
+      Highlight park
+      <select bind:value={app.park}>
+        <option value={null}>— none —</option>
+        {#each parksByName as p}
+          <option value={p.code}>{p.name}</option>
+        {/each}
+      </select>
+    </label>
+    {#if app.showTable}
+      <div class="slider"><YearSlider /></div>
+    {/if}
+  {/snippet}
+</ViewHeader>
+
+{#if app.showTable}
+  <DataTable
+    caption={`Park rankings by total visits, ${app.year}`}
+    rows={tableRows}
+    columns={[
+      { key: "rank", label: "Rank", numeric: true },
+      { key: "name", label: "Park" },
+      { key: "total", label: "Total visits", numeric: true, format: (v) => fmtFull(v as number) },
+    ]}
+  />
+{:else}
+  <div class="chart rank-chart" use:echart={{ option, onInit }} role="img" aria-label="Line chart of each national park's rank by total visits, 1979–2023. Use the table view for exact values."></div>
+{/if}
 
 <style>
-  #chart-container {
-    width: 100%; /* Full width of parent container */
-    height: 1600px; /* Full height of parent container */
+  .slider {
+    flex: 1 1 360px;
+    max-width: 640px;
+  }
+
+  .rank-chart {
+    height: max(720px, 70vh);
+    min-height: 1000px;
   }
 </style>

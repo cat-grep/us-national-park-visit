@@ -4,6 +4,15 @@
 		<meta charset="utf-8" />
 		<link rel="icon" href="%sveltekit.assets%/nationalparklogo.png" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="description" content="Interactive explorer of visits to 63 U.S. National Parks, 1979–2023: rankings, maps, seasonality and camping trends." />
+		<script>
+			// Apply the saved or system theme before first paint to avoid a flash.
+			try {
+				const saved = localStorage.getItem("theme");
+				const dark = saved ? saved === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+				if (dark) document.documentElement.classList.add("dark");
+			} catch {}
+		</script>
 		%sveltekit.head%
 		<link rel="stylesheet" href="%sveltekit.assets%/shared.css" />
 		<title>U.S. National Park Visit Data (1979-2023)</title>

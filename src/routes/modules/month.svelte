@@ -1,163 +1,79 @@
 <script lang="ts">
-  // Import ECharts core modules and required components
-  import * as echarts from "echarts/core";
-  import {
-    TooltipComponent,
-    TitleComponent,
-    GridComponent,
-    VisualMapComponent,
-  } from "echarts/components";
-  import { ScatterChart } from "echarts/charts";
-  import { CanvasRenderer } from "echarts/renderers";
+  // Year × month dot matrix of total recreation visits (all parks).
+  import { echart } from "$lib/echarts";
+  import ViewHeader from "$lib/components/ViewHeader.svelte";
+  import DataTable from "$lib/components/DataTable.svelte";
+  import { app } from "$lib/state.svelte";
+  import { tokens, baseOption, categoryAxis, seqSteps, fmtFull, fmtShort } from "$lib/theme";
+  import type { Dataset } from "$lib/data";
 
-  // Register ECharts components
-  echarts.use([
-    TooltipComponent,
-    TitleComponent,
-    GridComponent,
-    VisualMapComponent,
-    ScatterChart,
-    CanvasRenderer,
-  ]);
+  let { data }: { data: Dataset } = $props();
 
-  // Import JSON data and Svelte lifecycle hooks
-  import parkData from "../../data/US-National-Parks_Use_1979-2023_By-Month_Location_Date.json";
-  import { onMount, onDestroy } from "svelte";
+  const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const t = $derived(tokens(app.dark));
+  const years = data.years.map(String);
+  const points = data.months.map((m) => [data.years.indexOf(m.year), m.month - 1, m.rec]);
+  const maxVal = Math.max(...points.map((p) => p[2]));
+  const MAX_SIZE = 18;
 
-  let chartContainer: HTMLDivElement | null = null; // Reference for chart container
-  let chart: echarts.ECharts | null = null; // ECharts instance
-
-  // Reverse order of months for better representation
-  const months = [
-    "Dec",
-    "Nov",
-    "Oct",
-    "Sep",
-    "Aug",
-    "Jul",
-    "Jun",
-    "May",
-    "Apr",
-    "Mar",
-    "Feb",
-    "Jan",
-  ];
-
-  // Extract unique years from the dataset
-  const years = [...new Set(parkData.map((d) => d.Year))].sort((a, b) => a - b);
-
-  // Aggregate data into [YearIndex, MonthIndex, RecreationVisits]
-  const aggregatedData = parkData.reduce((acc, item) => {
-    const yearIndex = years.indexOf(item.Year);
-    const monthIndex = item.Month - 1; // Adjust for zero-based indexing
-    const visits = item.RecreationVisits;
-
-    if (!acc[yearIndex]) {
-      acc[yearIndex] = [];
-    }
-
-    acc[yearIndex][monthIndex] = (acc[yearIndex][monthIndex] || 0) + visits;
-
-    return acc;
-  }, []);
-
-  // Transform aggregated data into a flat array for ECharts
-  const data = [];
-  aggregatedData.forEach((yearData, yearIndex) => {
-    if (yearData) {
-      yearData.forEach((visits, monthIndex) => {
-        if (visits) {
-          data.push([yearIndex, monthIndex, visits]);
-        }
-      });
-    }
-  });
-
-  // Define ECharts configuration
-  const option = {
+  const option = $derived({
+    ...baseOption(t),
+    grid: { left: 8, right: 16, top: 16, bottom: 64, containLabel: true },
     tooltip: {
-      position: "top",
-      formatter: (params) => {
-        const year = years[params.data[0]];
-        const month = months[params.data[1]];
-        const visits = new Intl.NumberFormat("en-US").format(params.data[2]);
-        return `<b>${year} ${month}</b><br>Recreation Visits: ${visits}`;
-      },
+      ...baseOption(t).tooltip,
+      formatter: (p: { data: number[] }) =>
+        `<b>${MONTHS[p.data[1]]} ${years[p.data[0]]}</b><br/>${fmtFull(p.data[2])} recreation visits`,
     },
-    title: {
-      text: "Monthly Recreation Visits to National Parks Over the Years",
-      left: "center",
-    },
-    xAxis: {
-      type: "category",
-      data: years,
-      name: "Year",
-      nameLocation: "middle",
-      nameGap: 50,
-      axisLabel: {
-        rotate: 45, // Rotate labels for better readability
-      },
-    },
-    yAxis: {
-      type: "category",
-      data: months,
-      name: "Month",
-      nameLocation: "middle",
-      nameGap: 50,
-      inverse: false, // January appears at the top
-    },
+    xAxis: categoryAxis(t, years, { axisLabel: { color: t.muted, interval: 4 }, splitLine: { show: false } }),
+    yAxis: categoryAxis(t, MONTHS, { inverse: true, axisLabel: { color: t.ink2 } }),
     visualMap: {
       min: 0,
-      max: Math.max(...data.map((d) => d[2])),
+      max: maxVal,
+      dimension: 2,
       calculable: true,
-      orient: "vertical",
-      left: "right",
-      top: "middle",
-      itemHeight: 600,
+      orient: "horizontal",
+      left: "center",
+      bottom: 0,
+      itemHeight: 240,
+      itemWidth: 12,
+      textStyle: { color: t.muted },
+      inRange: { color: seqSteps(t) },
+      formatter: (v: number) => fmtShort(v),
     },
     series: [
       {
         type: "scatter",
-        data: data,
-        symbolSize: (value) => Math.sqrt(value[2]) / 100, // Scale point size
-        emphasis: {
-          label: {
-            show: true,
-            formatter: (params) =>
-              new Intl.NumberFormat("en-US").format(params.data[2]),
-            position: "top",
-          },
-        },
+        data: points,
+        symbolSize: (v: number[]) => Math.max(3, Math.sqrt(v[2] / maxVal) * MAX_SIZE),
+        itemStyle: { borderColor: t.surface, borderWidth: 1 },
       },
     ],
-  };
-
-  // Initialize and render the chart
-  const initializeChart = () => {
-    if (chartContainer) {
-      chart = echarts.init(chartContainer); // Initialize ECharts instance
-      chart.setOption(option); // Apply configuration
-    }
-  };
-
-  // Mount and cleanup hooks
-  onMount(() => {
-    initializeChart(); // Render the chart
-    window.addEventListener("resize", () => chart?.resize()); // Handle resizing
   });
 
-  onDestroy(() => {
-    if (chart) {
-      chart.dispose(); // Dispose of chart instance
-    }
+  const tableRows = data.years.map((y) => {
+    const row: Record<string, number> = { year: y };
+    for (const m of data.months.filter((d) => d.year === y)) row[MONTHS[m.month - 1]] = m.rec;
+    return row;
   });
 </script>
 
-<div id="chart-container" bind:this={chartContainer}></div>
+<ViewHeader />
+
+{#if app.showTable}
+  <DataTable
+    caption="Monthly recreation visits, all national parks"
+    rows={tableRows}
+    columns={[
+      { key: "year", label: "Year" },
+      ...MONTHS.map((m) => ({ key: m, label: m, numeric: true, format: (v: unknown) => fmtFull(v as number) })),
+    ]}
+  />
+{:else}
+  <div class="chart months" use:echart={{ option }} role="img" aria-label="Dot matrix of monthly recreation visits by year: summer months are consistently the busiest. Use the table view for exact values."></div>
+{/if}
 
 <style>
-  #chart-container {
-    width: 100%;
-    height: 100%; /* Ensure full utilization of the container */
+  .months {
+    height: 520px;
   }
 </style>
