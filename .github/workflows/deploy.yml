@@ -1,9 +1,9 @@
 name: Deploy to GitHub Pages
 
 on:
-  # Trigger the workflow every time you push to the `master` branch
+  # Trigger the workflow every time you push to the `main` branch
   push:
-    branches: [master]
+    branches: [main]
 
   # Allows you to run this workflow manually from the Actions tab on GitHub
   workflow_dispatch:
@@ -46,6 +46,9 @@ jobs:
         uses: actions/configure-pages@v5
         with:
           static_site_generator: sveltekit
+
+      - name: Type check
+        run: pnpm run check
 
       - name: Build project
         run: pnpm run build

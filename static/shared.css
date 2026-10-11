@@ -1,169 +1,163 @@
-@import "https://js.arcgis.com/4.31/@arcgis/core/assets/esri/themes/light/main.css";
-@import "https://js.arcgis.com/calcite-components/2.13.2/calcite.css";
-
+/* Global tokens. Chart colors live in src/lib/theme.ts and mirror these. */
 html {
-  --bg-1: rgba(254, 248, 239, 1);
-  /* Vintage theme background color */
-  --bg-2: #e0e6eb;
-  --bg-3: #c2cdd6;
-  --fg-1: #333333;
-  /* Title and main text color */
-  --fg-2: #4d4d4d;
-  --link: #919e8b;
-  /* Primary link color */
-  --link-hover: #d7ab82;
-  /* Adjusted hover color for better visibility */
-  --link-active: #bf444c;
-  /* Active link color */
-  --border-color: #ccc;
-  /* Border color for consistency */
-  --highlight: #f6efa6;
-  /* Highlight color for interactive elements */
+  color-scheme: light;
+  --bg-1: #fbf6ee; /* page */
+  --bg-2: #efe8dc;
+  --surface: #fffdf9; /* cards, charts */
+  --fg-1: #1f2328; /* primary text */
+  --fg-2: #4d4f52; /* secondary text */
+  --fg-3: #7d7b76; /* muted: axes, hints */
+  --border-color: #e2dccf;
+  --grid: #e9e4da;
+  --axis: #c9c3b6;
+  --accent: #2d6db5;
+  --link: #2d6db5;
+  --link-hover: #1d4f8a;
+  --nav-bg: #314656;
+  --nav-fg: #e6ebef;
+  --nav-hover: #43596b;
+  --nav-accent: #f0b46b;
+  --radius: 8px;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
 }
 
 html.dark {
-  --bg-1: #2e2e2e;
-  --bg-2: #4d4d4d;
-  --bg-3: #666;
-  --fg-1: #e6e6e6;
-  /* Light text for dark mode */
-  --fg-2: #b3b3b3;
-  --fg-3: #999;
-  --link: #73c1fc;
-  --link-hover: #91cefd;
-  --link-active: #4baffb;
-  --border-color: #444444;
-  --highlight: #293c55;
-  /* Subtle highlight in dark mode */
+  color-scheme: dark;
+  --bg-1: #15181b;
+  --bg-2: #262b30;
+  --surface: #1d2125;
+  --fg-1: #eceae4;
+  --fg-2: #c3c1b9;
+  --fg-3: #8d8b85;
+  --border-color: #343a40;
+  --grid: #2c3136;
+  --axis: #41474d;
+  --accent: #3a86e0;
+  --link: #6aa6ec;
+  --link-hover: #93c0f3;
+  --nav-bg: #101316;
+  --nav-fg: #d9dde1;
+  --nav-hover: #252b31;
+  --nav-accent: #f0b46b;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 body {
-  --border-radius: 4px;
-  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
-  --font-mono: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, "DejaVu Sans Mono", monospace;
+  margin: 0;
   background: var(--bg-1);
   color: var(--fg-1);
   font-family: var(--font);
-  height: calc(100vh - 2rem);
-  margin: 1rem;
   line-height: 1.5;
 }
 
-/* Adjusted heading styles */
 h1,
 h2,
-h3,
-h4,
-h5,
-h6 {
-  font-weight: 400;
-  line-height: 1.1;
+h3 {
+  font-weight: 600;
+  line-height: 1.2;
   color: var(--fg-1);
-  /* Use main text color */
 }
 
-/* Link styles */
 a {
   color: var(--link);
-  text-decoration: none;
 }
 
 a:hover {
   color: var(--link-hover);
-  text-decoration: underline;
 }
 
-a:active {
-  color: var(--link-active);
-}
-
-/* Button styles */
 button {
-  background: var(--link);
-  color: var(--bg-1);
-  border-radius: var(--border-radius);
+  font: inherit;
+  cursor: pointer;
+  background: var(--accent);
+  color: #fff;
   border: none;
-  padding: 0.5rem 1rem;
-  transition: background-color 0.2s;
-}
-
-button:hover {
-  background: var(--link-hover);
-}
-
-button:active {
-  background: var(--link-active);
+  border-radius: 6px;
+  padding: 0.45rem 0.9rem;
 }
 
 button:disabled {
-  background: var(--link);
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
-/* Form elements */
-input,
-textarea,
+button:focus-visible,
+select:focus-visible,
+input:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 select {
-  background: var(--bg-1);
-  /* border: 1px solid var(--border-color); */
+  font: inherit;
   color: var(--fg-1);
-  padding: 0.5rem;
-  border-radius: var(--border-radius);
-  font-family: var(--font);
-}
-
-/* Navigation bar */
-nav {
-  background: var(--bg-2);
+  background: var(--surface);
   border: 1px solid var(--border-color);
-  border-radius: var(--border-radius);
+  border-radius: 6px;
+  padding: 0.35rem 0.5rem;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
   padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
 }
 
-nav a {
-  color: var(--fg-1);
-  font-weight: bold;
-  text-decoration: none;
-  padding: 0.5rem;
+.chart {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
 }
 
-nav a:hover {
-  background: var(--highlight);
-  color: var(--link);
-  border-radius: var(--border-radius);
-}
-
-/* Highlight code */
-code {
-  background: var(--bg-2);
-  color: var(--fg-1);
-  padding: 0.2rem 0.4rem;
-  border-radius: var(--border-radius);
-  font-family: var(--font-mono);
+.field {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--fg-2);
   font-size: 0.9rem;
 }
 
-/* Adjusted list styles */
-ul {
-  list-style: none;
-  padding: 0;
-}
-
-ul.todos li {
-  background: var(--bg-1);
-  padding: 0.5rem;
-  margin: 0.5rem 0;
-  border-radius: var(--border-radius);
+.chips {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  flex-wrap: wrap;
+  gap: 0.35rem;
 }
 
-/* Highlight hover and focus */
-ul.todos li:hover {
-  background: var(--highlight);
+.chip {
+  background: transparent;
+  color: var(--fg-2);
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  padding: 0.2rem 0.7rem;
+  font-size: 0.85rem;
+}
+
+.chip[aria-pressed="true"] {
+  background: var(--fg-1);
+  border-color: var(--fg-1);
+  color: var(--bg-1);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0s !important;
+    animation-duration: 0s !important;
+  }
 }
